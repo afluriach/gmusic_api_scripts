@@ -1,11 +1,24 @@
 #!/opt/local/bin/python
 
 import os
+import json
 from gmusicapi import Musicmanager
 
-files_to_upload = []
+record_fname = "upload_record.json"
 
+files_to_upload = []
 fails = []
+
+def write_record():
+    json.dump(uploaded, open(record_fname, 'w'))
+#end
+
+if(os.path.isfile(record_fname)):
+    f = open(record_fname, 'r')
+    uploaded = json.load(f)
+else:
+    uploaded = {}
+#end
 
 for folder, _subs, files in os.walk('.', followlinks=True):
     print("Scanning folder " + folder)
@@ -28,18 +41,35 @@ if not manager.login():
     exit()
 #end
 
-for music_file in files_to_upload:
-    print("Uploading " + music_file)
-    if manager.upload(music_file):
-        print("Uploaded " + music_file)
-    else:
-        fails.append(music_file)
+def process_uploads():
+    for music_file in files_to_upload:
+        if music_file in uploaded:
+            print(music_file + " has already been uploaded.")
+            continue
+        #end            
+        print("Uploading " + music_file)
+        if manager.upload(music_file):
+            print("Uploaded " + music_file)
+            uploaded[music_file] = "true"
+        else:
+            fails.append(music_file)
+        #end
     #end
 #end
 
-if fails:
-    print("The follow files failed to upload: ")
-    for file in fails:
-        print(file)
+def print_fails():
+    if fails:
+        print("The follow files failed to upload: ")
+        for file in fails:
+            print(file)
+        #end
     #end
+#end
+
+try:
+    process_uploads()
+except KeyboardInterrupt:
+    print("Keyboard interrupt, quitting...")
+finally:
+    write_record()
 #end
