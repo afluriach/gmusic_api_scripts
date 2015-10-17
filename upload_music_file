@@ -1,0 +1,21 @@
+#!/opt/local/bin/python
+
+import os
+import sys
+from gmusicapi import Musicmanager
+
+manager = Musicmanager();
+
+if not manager.login():
+    print("login failed!")
+    exit()
+#end
+
+music_file = sys.argv[1]
+
+print("Uploading " + music_file)
+if manager.upload(music_file):
+    print("Uploaded " + music_file)
+else:
+    print(music_file + " failed to upload.")
+#end
