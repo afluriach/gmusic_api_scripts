@@ -13,25 +13,35 @@ def write_record():
     json.dump(uploaded, open(record_fname, 'w'))
 #end
 
+def notify(msg):
+    os.system("terminal-notifier -message %s" % (msg,))
+#end
+
+def process_file_upload(music_file):
+    #It's hard to make sure the JSON record gets cleanly written out. But it's easy to 
+    #touch an empty *.uploaded file to symbolize that it's been uploaded.
+    if music_file in uploaded or os.path.exists(music_file+'.uploaded'):
+        print(music_file + " has already been uploaded.")
+        return
+    #end            
+    print("Uploading " + music_file)
+    if manager.upload(music_file):
+        print("Uploaded " + music_file)
+        uploaded[music_file] = "true"
+        open(music_file+'.uploaded', 'w').close()
+    else:
+        fails.append(music_file)
+        notify(music_file + " failed to upload.")
+    #end
+
+#end
+
+
 if(os.path.isfile(record_fname)):
     f = open(record_fname, 'r')
     uploaded = json.load(f)
 else:
     uploaded = {}
-#end
-
-for folder, _subs, files in os.walk('.', followlinks=True):
-    print("Scanning folder " + folder)
-    for file in files:
-        if file.endswith('.mp3') or file.endswith('.flac'):
-            files_to_upload.append(os.path.join(folder, file))
-        #end
-    #end
-#end
-
-print("Files found: ")
-for file in files_to_upload:
-    print(file)
 #end
 
 manager = Musicmanager();
@@ -41,20 +51,14 @@ if not manager.login():
     exit()
 #end
 
-def process_uploads():
-    for music_file in files_to_upload:
-        if music_file in uploaded:
-            print(music_file + " has already been uploaded.")
-            continue
-        #end            
-        print("Uploading " + music_file)
-        if manager.upload(music_file):
-            print("Uploaded " + music_file)
-            uploaded[music_file] = "true"
-        else:
-            fails.append(music_file)
+for folder, _subs, files in os.walk('.', followlinks=True):
+    print("Scanning folder " + folder)
+    for file in files:
+        if file.endswith('.mp3') or file.endswith('.flac'):
+            process_file_upload(os.path.join(folder, file))
         #end
     #end
+    notify("Folder " + folder + " has finished uploading.")
 #end
 
 def print_fails():
@@ -70,6 +74,11 @@ try:
     process_uploads()
 except KeyboardInterrupt:
     print("Keyboard interrupt, quitting...")
+except Exception:
+    print(Exception)
+    print("Fatal error.")
+    notify("Upload music album halted with exception.")
 finally:
     write_record()
+    exit()
 #end
