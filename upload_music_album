@@ -14,7 +14,7 @@ def write_record():
 #end
 
 def notify(msg):
-    os.system("terminal-notifier -message %s" % (msg,))
+    os.system('terminal-notifier -message "%s"' % (msg,))
 #end
 
 def process_file_upload(music_file):
@@ -29,6 +29,7 @@ def process_file_upload(music_file):
         print("Uploaded " + music_file)
         uploaded[music_file] = "true"
         open(music_file+'.uploaded', 'w').close()
+        return True
     else:
         fails.append(music_file)
         notify(music_file + " failed to upload.")
@@ -52,13 +53,17 @@ if not manager.login():
 #end
 
 for folder, _subs, files in os.walk('.', followlinks=True):
+    did_upload = False
     print("Scanning folder " + folder)
     for file in files:
         if file.endswith('.mp3') or file.endswith('.flac'):
-            process_file_upload(os.path.join(folder, file))
+            if process_file_upload(os.path.join(folder, file)): did_upload = True
         #end
     #end
-    notify("Folder " + folder + " has finished uploading.")
+    #Only notify if a music file was uploaded from this folder
+    if did_upload:
+        notify("Folder " + folder + " has finished uploading.")
+    #end
 #end
 
 def print_fails():
