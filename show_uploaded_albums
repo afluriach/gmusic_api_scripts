@@ -1,0 +1,68 @@
+#!/usr/bin/env python
+
+from gmusicapi import Musicmanager
+import os
+from mutagen.flac import FLAC
+from mutagen.mp3 import MP3
+
+def process_file_tags(file):
+    if file.endswith('.flac'):
+        print("Skipping " + file)
+    elif file.endswith('.mp3'):
+        audio = MP3(file)
+    #end
+    album = audio.tags.getall("TALB")[0][0]
+    
+    print("processing " + file)
+    
+    if not album in albums_on_server:
+        not_uploaded_albums[album] = True
+    else:
+        already_uploaded_albums[album] = True
+    #end
+#end
+
+manager = Musicmanager()
+
+manager.login()
+
+songs = manager.get_uploaded_songs()
+
+print("Retrieved %d songs from the server." % (len(songs),))
+
+#Sort tracks by album
+albums_on_server = {}
+
+not_uploaded_albums = {}
+already_uploaded_albums = {}
+
+for song in songs:
+    albums_on_server[song['album']] = True
+#end
+
+print("%d albums on the server." % (len(albums_on_server),) )
+
+for folder, _subs, files in os.walk('.', followlinks=True):
+    print("Scanning folder " + folder)
+    for file in files:
+        if file.endswith('.mp3') or file.endswith('.flac'):
+            process_file_tags(os.path.join(folder, file))
+        #end
+    #end
+#end
+
+if len(already_uploaded_albums) > 0:
+    print("The following have already been uploaded:")
+#end
+
+for album in already_uploaded_albums.keys():
+    print("    " + album)
+#end
+
+if len(not_uploaded_albums) > 0:
+    print("The following have not been uploaded:")
+#end
+
+for album in not_uploaded_albums.keys():
+    print("    " + album)
+#end
