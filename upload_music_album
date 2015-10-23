@@ -2,6 +2,7 @@
 
 import os
 import json
+import time
 from gmusicapi import Musicmanager
 
 record_fname = "upload_record.json"
@@ -23,10 +24,17 @@ def process_file_upload(music_file):
     if music_file in uploaded or os.path.exists(music_file+'.uploaded'):
         print(music_file + " has already been uploaded.")
         return
-    #end            
-    print("Uploading " + music_file)
-    if manager.upload(music_file):
-        print("Uploaded " + music_file)
+    #end
+
+    file_size = os.stat(music_file).st_size
+    #The file on the filesystem is not the one that will be uploaded.
+    #Extrapolate file size based on file length and 320kpbs encoding.
+       
+    print("Uploading %s, %.1f MB." % (music_file,file_size/1e6))
+    start_time = time.time()
+    if manager.upload(music_file, transcode_quality=0):
+        elapsed = time.time() - start_time
+        print("Uploaded %s in %.1f sec, %.1f KB/s." % (music_file,elapsed,file_size/elapsed/1e3))
         uploaded[music_file] = "true"
         open(music_file+'.uploaded', 'w').close()
         return True
@@ -56,7 +64,7 @@ for folder, _subs, files in os.walk('.', followlinks=True):
     did_upload = False
     print("Scanning folder " + folder)
     for file in files:
-        if file.endswith('.mp3') or file.endswith('.flac'):
+        if file.endswith('.mp3') or file.endswith('.flac') or file.endswith('.m4a'):
             if process_file_upload(os.path.join(folder, file)): did_upload = True
         #end
     #end
