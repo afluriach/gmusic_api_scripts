@@ -60,11 +60,19 @@ if not manager.login():
     exit()
 #end
 
+extensions = ['mp3', 'MP3', 'flac', 'm4a', 'ogg']
+
+def is_music_file(path):
+    for ext in extensions:
+        if path.endswith(ext): return True
+    #end
+#end
+
 for folder, _subs, files in os.walk('.', followlinks=True):
     did_upload = False
     print("Scanning folder " + folder)
     for file in files:
-        if file.endswith('.mp3') or file.endswith('.flac') or file.endswith('.m4a'):
+        if is_music_file(file):
             if process_file_upload(os.path.join(folder, file)): did_upload = True
         #end
     #end
