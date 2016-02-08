@@ -54,6 +54,7 @@ else:
 #end
 
 manager = Musicmanager();
+#manager.perform_oauth()
 
 if not manager.login():
     print("login failed!")
